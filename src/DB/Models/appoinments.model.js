@@ -1,27 +1,59 @@
 import mongoose from "mongoose";
 
+
 const appointmentSchema = new mongoose.Schema({
-    patient: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+    patient: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    doctor: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true },
+    appointmentType: {
+        type: String,
+        enum: ['clinic', 'home_visit', 'video', 'voice'],
         required: true
     },
-    doctor: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'DoctorProfile',
-        required: true
-    },
-    appointmentDate: { type: Date, required: true },
-    appointmentTime: { type: String, required: true }, // e.g., "10:30 AM"
+    clinic: { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic' }, // ref to doctor's clinic subdoc
+    date: { type: Date, required: true },
+    Time: { type: String, required: true },
+
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'completed', 'cancelled'],
+        enum: ['pending', 'confirmed', 'completed', 'cancelled', 'no_show', 'rescheduled'],
         default: 'pending'
     },
-    reasonForVisit: { type: String },
-    notes: { type: String } // For the doctor to add notes after the visit
-}, { timestamps: true });
+    // Fees
+    feveseta: { type: Number, required: true },
+    discountApplied: { type: Number, default: 0 },
+    finalFees: { type: Number, required: true },
+    /////////////////////////////////////////////
+    // Patient info snapshot
+    patientAge: Number,
+    patientGender: String,
+    // Reason & notes
+    reasonForVisit: { type: String, maxlength: 500 },
+    symptoms: [String],
+    doctorNotes: { type: String, maxlength: 1000 },
+    prescription: { type: String },
+    // Cancellation
+    cancelledBy: { type: String, enum: ['patient', 'doctor', 'admin'] },
+    cancellationReason: String,
+    cancelledAt: Date,
 
-const appointmentModel = mongoose.models.Appointment || mongoose.model('Appointment' , appointmentSchema)
 
+
+
+
+    // Review
+    hasReview: { type: Boolean, default: false },
+    review: { type: mongoose.Schema.Types.ObjectId, ref: 'Review' },
+
+
+
+}
+
+    , {
+        timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true }
+    });
+
+
+const appointmentModel = mongoose.models.Appointment|| model('Appointment', appointmentSchema)
 export default appointmentModel

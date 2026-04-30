@@ -12,6 +12,8 @@ app.use(cors({ // anyone can make a request to the server
 }))
 
 app.use(express.json())
+
+
 bootstrap(app , express)
 
 

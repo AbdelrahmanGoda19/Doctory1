@@ -1,27 +1,23 @@
 import mongoose from "mongoose"
 import validator from 'validator'
+// import {schema , model} from 'mongoose'
 const userSchema = new mongoose.Schema({
-    firstName: {
-        type: String,
-        required: true,
-        minLength: [3, 'First name must be at least 3 characters'],
-        maxLength: [15, 'First name maximum length is 15 characters']
-    },
-    lastName: {
-        type: String,
-        required: true,
-        minLength: [3, 'Last name must be at least 3 characters'],
-        maxLength: [15, 'Last name maximum length is 15 characters']
-    },
+    fullName: { type: String, required: [true, 'userName is required'], trim: true, maxlength: 50 },
     email: {
+        type: String, required: [true, 'Email is required'],
+        unique: true, sparse: true, lowercase: true,
+        match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email']
+    },
+    Nationality: {
         type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
-        validate: {
-            validator: validator.isEmail,
-            message: '{VALUE} is not a valid email',
-        }
+        default: 'Egyptian'
+
+    },
+    address: {
+        street: String,
+        city: String,
+        governorate: String,
+        country: { type: String, default: 'Egypt' }
     },
     password: {
         type: String,
@@ -39,17 +35,19 @@ const userSchema = new mongoose.Schema({
             message: 'Password is too weak, Please insert a Strong password!!'
         }
     },
-    phone: { type: String, required: true },
+    phone: { type: String },
     role: {
         type: String,
         enum: ['patient', 'doctor', 'admin'],
         default: 'patient'
     },
+    favoriteDoctors: [{ type: mongoose.Types.ObjectId, ref: 'Doctor' }],
     dateOfBirth: { type: Date },
-    gender: { type: String, enum: ['male', 'female'] }
+    gender: { type: String, enum: ['male', 'female'] },
+
 }, { timestamps: true })
 
 
-const userModel = mongoose.models.User || mongoose.model('User' , userSchema)
+const userModel = mongoose.models.User || mongoose.model('User', userSchema)
 
 export default userModel;

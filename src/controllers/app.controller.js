@@ -1,11 +1,15 @@
 import DBConnection from "../DB/connection/DB.connection.js";
-import userRoutes from "../routes/user.routes.js"
-
+import userRoutes from '../modules/auth_user/auth_user.route.js'
 
 const bootstrap = (app, express) => {
 
     app.get('/', (req, res) => res.json({ message: 'baseURL' }))
-    app.use('/users' , userRoutes)
+
+
+    
+    app.use('/user/auth' , userRoutes)
+
+
 //START ROUTES
 
 
