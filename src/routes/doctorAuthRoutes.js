@@ -1,6 +1,11 @@
 import { Router } from 'express';
-import { registerDoctor, verifyDoctorOTP, loginDoctor } from '../controllers/doctorAuthController.js';
-import { verifyOTPRules, loginRules, validate } from '../middleware/validators.js';
+import {
+    registerDoctor,
+    verifyDoctorOTP,
+    loginDoctor,
+    resendDoctorOTP,  // ← add
+} from '../controllers/doctorAuthController.js';
+import { verifyOTPRules, loginRules, resendOTPRules, validate } from '../middleware/validators.js';
 import { body } from 'express-validator';
 
 const router = Router();
@@ -19,6 +24,7 @@ const registerDoctorRules = [
 
 router.post('/register', registerDoctorRules, validate, registerDoctor);
 router.post('/verify-otp', verifyOTPRules, validate, verifyDoctorOTP);
+router.post('/resend-otp', resendOTPRules, validate, resendDoctorOTP);  // ← add
 router.post('/login', loginRules, validate, loginDoctor);
 
 export default router;

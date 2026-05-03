@@ -4,6 +4,7 @@ import Doctor from '../models/Doctor.js';
 import { generateOTP, getOTPExpiry } from '../utils/otp.js';
 import { sendOTPEmail } from '../utils/email.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+import Clinic from '../models/Clinic.js';
 
 // ─── Register Doctor ──────────────────────────────────────────────────────────
 export const registerDoctor = async (req, res) => {
@@ -121,5 +122,31 @@ export const loginDoctor = async (req, res) => {
     } catch (error) {
         console.error('Doctor login error:', error);
         return sendError(res, 500, 'Login failed. Please try again.');
+    }
+};
+
+// ─── Resend OTP ───────────────────────────────────────────────────────────────
+export const resendDoctorOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const doctor = await Doctor.findOne({ email });
+        if (!doctor) return sendError(res, 404, 'No account found with this email.');
+        if (doctor.isEmailVerified) return sendError(res, 400, 'This account is already verified.');
+
+        const otp = generateOTP();
+        const hashedOTP = await bcrypt.hash(otp, 10);
+
+        await Doctor.findByIdAndUpdate(doctor._id, {
+            otp: hashedOTP,
+            otpExpire: getOTPExpiry(),
+        });
+
+        await sendOTPEmail(email, otp, doctor.fullName);
+
+        return sendSuccess(res, 200, 'A new OTP has been sent to your email.');
+    } catch (error) {
+        console.error('Resend doctor OTP error:', error);
+        return sendError(res, 500, 'Failed to resend OTP. Please try again.');
     }
 };

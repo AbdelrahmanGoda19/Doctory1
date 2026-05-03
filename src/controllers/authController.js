@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import { generateOTP, getOTPExpiry } from '../utils/otp.js';
 import { sendOTPEmail } from '../utils/email.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+import Clinic from '../models/Clinic.js';
 
 // ─── Register ────────────────────────────────────────────────────────────────
 export const register = async (req, res) => {

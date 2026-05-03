@@ -1,5 +1,7 @@
 import User from '../models/User.js';
 import Doctor from '../models/Doctor.js';
+import Clinic from '../models/Clinic.js';
+
 import Appointment from '../models/Appointment.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 
