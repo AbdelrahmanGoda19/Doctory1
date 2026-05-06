@@ -5,8 +5,9 @@ import connectDB from './src/config/db.js';
 import authRoutes from './src/routes/authRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
 import doctorRoutes from './src/routes/doctorRoutes.js';
-import doctorAuthRoutes from './src/routes/doctorAuthRoutes.js'; // ← add
-import userRoutes from './src/routes/userRoutes.js';  // ← add
+import doctorAuthRoutes from './src/routes/doctorAuthRoutes.js';
+import userRoutes from './src/routes/userRoutes.js'; 
+import clinicRoutes from './src/routes/clinicRoutes.js'; 
 
 const app = express();
 
@@ -36,10 +37,11 @@ app.get('/', (req, res) => {
 
 // ─── Routes ────
 app.use('/api/auth', authRoutes);
-app.use('/api/doctors', doctorRoutes);
-app.use('/api/auth/doctor', doctorAuthRoutes);  // ← add
+app.use('/api/auth/doctor', doctorAuthRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/doctors', doctorRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/clinics', clinicRoutes); 
 
 // ─── 404 Handler
 app.use((req, res) => {
