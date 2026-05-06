@@ -8,6 +8,7 @@ import doctorRoutes from './src/routes/doctorRoutes.js';
 import doctorAuthRoutes from './src/routes/doctorAuthRoutes.js';
 import userRoutes from './src/routes/userRoutes.js'; 
 import clinicRoutes from './src/routes/clinicRoutes.js'; 
+import appointmentRoutes from './src/routes/appointmentRoutes.js';  // ← add
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/clinics', clinicRoutes); 
+app.use('/api/appointments', appointmentRoutes);
 
 // ─── 404 Handler
 app.use((req, res) => {
