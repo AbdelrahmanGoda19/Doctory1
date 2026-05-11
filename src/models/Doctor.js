@@ -43,14 +43,14 @@ const doctorSchema = new mongoose.Schema(
     clinic: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Clinic' }],
 
     homeVisit: {
-      available: { type: Boolean, default: false },
-      fees: { type: Number, default: 0 },
+      available: { type: Boolean, default: true },
+      fees: { type: Number, default: 450 },
       areas: [String],
     },
 
     video_consulation: {
-      available: { type: Boolean, default: false },
-      fees: { type: Number, default: 0 },
+      available: { type: Boolean, default: true },
+      fees: { type: Number, default: 300 },
     },
 
     // Verification & status
