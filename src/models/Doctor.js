@@ -59,6 +59,9 @@ const doctorSchema = new mongoose.Schema(
     otp: { type: String, default: null, select: false },
     otpExpire: { type: Date, default: null, select: false },
 
+    resetPasswordOtp: { type: String, default: null, select: false },
+    resetPasswordOtpExpire: { type: Date, default: null, select: false },
+
     // Stats
     rating: { type: Number, default: 0, min: 0, max: 5 },
     reviewCount: { type: Number, default: 0 },
