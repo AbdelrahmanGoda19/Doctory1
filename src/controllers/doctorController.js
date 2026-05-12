@@ -1,7 +1,7 @@
 import Doctor from '../models/Doctor.js';
+import Review from '../models/Review.js';
+import mongoose from 'mongoose';
 import { sendSuccess, sendError } from '../utils/response.js';
-import Clinic from '../models/Clinic.js';
-// import { sendSuccess, sendError } from '../utils/response.js';
 
 // ─── Get All Doctors (with filters) ─────────────────────────────────────────
 export const getDoctors = async (req, res) => {
@@ -49,6 +49,57 @@ export const getDoctorById = async (req, res) => {
   } catch (error) {
     console.error('Get doctor by ID error:', error);
     return sendError(res, 500, 'Failed to fetch doctor.');
+  }
+};
+
+// ─── List written reviews for a doctor (public) ───────────────────────────────
+export const getDoctorReviews = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, 400, 'Invalid doctor id.');
+    }
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const skip = (page - 1) * limit;
+
+    const doctorExists = await Doctor.exists({ _id: id });
+    if (!doctorExists) return sendError(res, 404, 'Doctor not found.');
+
+    const [reviews, total] = await Promise.all([
+      Review.find({ doctor: id })
+        .populate('patient', 'fullName')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Review.countDocuments({ doctor: id }),
+    ]);
+
+    const list = reviews.map((r) => ({
+      _id: r._id,
+      rating: r.rating,
+      comment: r.comment || '',
+      text: r.comment || '',
+      review: r.comment || '',
+      createdAt: r.createdAt,
+      patientName: r.patient?.fullName || 'Patient',
+      author: r.patient?.fullName || 'Patient',
+      patient: r.patient?.fullName ? { fullName: r.patient.fullName } : undefined,
+    }));
+
+    return sendSuccess(res, 200, 'Reviews fetched successfully.', {
+      reviews: list,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit) || 0,
+      },
+    });
+  } catch (error) {
+    console.error('Get doctor reviews error:', error);
+    return sendError(res, 500, 'Failed to fetch reviews.');
   }
 };
 

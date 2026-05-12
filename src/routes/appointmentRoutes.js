@@ -11,6 +11,7 @@ import {
     rescheduleAppointment,
     addDoctorNotes,
     markNoShow,
+    submitAppointmentReview,
 } from '../controllers/appointmentController.js';
 import auth from '../middleware/auth.js';
 import authorize from '../middleware/authorize.js';
@@ -57,9 +58,21 @@ const notesRules = [
     body('prescription').optional().isString().withMessage('Prescription must be a string'),
 ];
 
+const appointmentReviewRules = [
+    body('rating')
+        .isInt({ min: 1, max: 5 })
+        .withMessage('Rating must be an integer from 1 to 5'),
+    body('comment')
+        .optional()
+        .isString()
+        .isLength({ max: 2000 })
+        .withMessage('Comment cannot exceed 2000 characters'),
+];
+
 // ─── Patient Routes ───────────────────────────────────────────────────────────
 router.post('/', auth, authorize('patient'), bookAppointmentRules, validate, bookAppointment);
 router.get('/my', auth, authorize('patient'), getMyAppointments);
+router.post('/:id/review', auth, authorize('patient'), appointmentReviewRules, validate, submitAppointmentReview);
 
 // ─── Doctor Routes ────────────────────────────────────────────────────────────
 router.get('/doctor', auth, authorize('doctor'), getDoctorAppointments);

@@ -2,7 +2,19 @@ import Appointment from '../models/Appointment.js';
 import Doctor from '../models/Doctor.js';
 import Clinic from '../models/Clinic.js';
 import User from '../models/User.js';
+import Review from '../models/Review.js';
+import { recomputeDoctorRatingStats } from '../utils/doctorRating.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+
+/** Adds patientRating / patientReview when review is populated (frontend compatibility). */
+function shapeAppointmentForClient(appointmentDoc) {
+  const o = appointmentDoc.toObject ? appointmentDoc.toObject({ virtuals: true }) : { ...appointmentDoc };
+  if (o.review && typeof o.review === 'object' && o.review.rating != null) {
+    o.patientRating = o.review.rating;
+    o.patientReview = o.review.comment ?? '';
+  }
+  return o;
+}
 
 // ─── Book Appointment (Patient) ───────────────────────────────────────────────
 export const bookAppointment = async (req, res) => {
@@ -141,14 +153,17 @@ export const getMyAppointments = async (req, res) => {
             Appointment.find(filter)
                 .populate('doctor', 'fullName specialty image_profile title')
                 .populate('clinic', 'name address.city')
+                .populate('review', 'rating comment createdAt')
                 .skip(skip)
                 .limit(parseInt(limit))
                 .sort({ date: -1 }),
             Appointment.countDocuments(filter),
         ]);
 
+        const shaped = appointments.map((a) => shapeAppointmentForClient(a));
+
         return sendSuccess(res, 200, 'Appointments fetched successfully.', {
-            appointments,
+            appointments: shaped,
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -244,7 +259,8 @@ export const getAppointmentById = async (req, res) => {
         const appointment = await Appointment.findById(req.params.id)
             .populate('patient', 'fullName email phone gender dateOfBirth')
             .populate('doctor', 'fullName specialty image_profile title phone')
-            .populate('clinic', 'name address phone');
+            .populate('clinic', 'name address phone')
+            .populate('review', 'rating comment createdAt');
 
         if (!appointment) return sendError(res, 404, 'Appointment not found.');
 
@@ -259,7 +275,9 @@ export const getAppointmentById = async (req, res) => {
             return sendError(res, 403, 'You are not authorized to view this appointment.');
         }
 
-        return sendSuccess(res, 200, 'Appointment fetched successfully.', { appointment });
+        return sendSuccess(res, 200, 'Appointment fetched successfully.', {
+            appointment: shapeAppointmentForClient(appointment),
+        });
     } catch (error) {
         console.error('Get appointment by ID error:', error);
         return sendError(res, 500, 'Failed to fetch appointment.');
@@ -456,6 +474,64 @@ export const addDoctorNotes = async (req, res) => {
     } catch (error) {
         console.error('Add doctor notes error:', error);
         return sendError(res, 500, 'Failed to save notes.');
+    }
+};
+
+// ─── Submit review after completed visit (Patient) ───────────────────────────
+export const submitAppointmentReview = async (req, res) => {
+    try {
+        const patientId = req.user.userId;
+        const { rating, comment } = req.body;
+
+        const appointment = await Appointment.findById(req.params.id);
+        if (!appointment) return sendError(res, 404, 'Appointment not found.');
+
+        if (appointment.patient.toString() !== patientId) {
+            return sendError(res, 403, 'Only the patient for this appointment can submit a review.');
+        }
+
+        if (appointment.status !== 'completed') {
+            return sendError(res, 400, 'You can only review a completed appointment.');
+        }
+
+        if (appointment.hasReview && appointment.review) {
+            return sendError(res, 400, 'You have already submitted a review for this visit.');
+        }
+
+        const existingReview = await Review.findOne({ appointment: appointment._id });
+        if (existingReview) {
+            return sendError(res, 400, 'A review already exists for this appointment.');
+        }
+
+        const reviewDoc = await Review.create({
+            appointment: appointment._id,
+            doctor: appointment.doctor,
+            patient: patientId,
+            rating: Number(rating),
+            comment: comment != null ? String(comment).trim() : '',
+        });
+
+        appointment.hasReview = true;
+        appointment.review = reviewDoc._id;
+        await appointment.save();
+
+        await recomputeDoctorRatingStats(appointment.doctor);
+
+        const populated = await Appointment.findById(appointment._id)
+            .populate('patient', 'fullName email phone')
+            .populate('doctor', 'fullName specialty image_profile title rating reviewCount')
+            .populate('clinic', 'name address.city')
+            .populate('review', 'rating comment createdAt');
+
+        return sendSuccess(res, 201, 'Thank you for your feedback.', {
+            appointment: shapeAppointmentForClient(populated),
+        });
+    } catch (error) {
+        console.error('Submit appointment review error:', error);
+        if (error.code === 11000) {
+            return sendError(res, 400, 'A review already exists for this appointment.');
+        }
+        return sendError(res, 500, 'Failed to submit review.');
     }
 };
 
