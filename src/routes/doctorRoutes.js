@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
     getDoctors,
     getDoctorById,
+    getDoctorReviews,
     updateDoctor,   // ← add
     deleteDoctor,   // ← add
 } from '../controllers/doctorController.js';
@@ -12,6 +13,7 @@ const router = Router();
 
 // Public routes
 router.get('/', getDoctors);
+router.get('/:id/reviews', getDoctorReviews);
 router.get('/:id', getDoctorById);
 
 // Admin only routes
