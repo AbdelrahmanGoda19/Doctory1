@@ -54,6 +54,38 @@ export const sendOTPEmail = async (to, otp, name = 'User') => {
 };
 
 /**
+ * Send password reset OTP email
+ */
+export const sendPasswordResetOTPEmail = async (to, otp, name = 'User') => {
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: `"Medical Booking" <${process.env.EMAIL_FROM}>`,
+    to,
+    subject: 'Reset your password - Medical Booking',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563eb;">Password reset</h2>
+        <p>Hello <strong>${name}</strong>,</p>
+        <p>We received a request to reset your password. Use the code below:</p>
+        <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0;">
+          <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1e40af;">${otp}</span>
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">
+          This code is valid for <strong>10 minutes</strong>. If you did not request a reset, ignore this email.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+        <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+          © ${new Date().getFullYear()} Medical Booking. All rights reserved.
+        </p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+/**
  * Generic email sender
  */
 export const sendEmail = async ({ to, subject, html }) => {

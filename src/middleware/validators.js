@@ -55,3 +55,26 @@ export const loginRules = [
 export const resendOTPRules = [
   body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address'),
 ];
+
+export const forgotPasswordRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address'),
+];
+
+export const verifyResetOtpRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address'),
+  body('otp')
+    .isLength({ min: 6, max: 6 })
+    .isNumeric()
+    .withMessage('OTP must be exactly 6 digits'),
+];
+
+export const resetPasswordRules = [
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address'),
+  body('otp')
+    .isLength({ min: 6, max: 6 })
+    .isNumeric()
+    .withMessage('OTP must be exactly 6 digits'),
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters'),
+];

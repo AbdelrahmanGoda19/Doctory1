@@ -55,12 +55,10 @@ export const toggleUserStatus = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return sendError(res, 404, 'User not found.');
 
-    // Prevent disabling another admin
     if (user.role === 'admin') {
       return sendError(res, 403, 'Cannot modify another admin account.');
     }
 
-    // Using isVerified as active/inactive flag for patients
     user.isVerified = !user.isVerified;
     await user.save();
 

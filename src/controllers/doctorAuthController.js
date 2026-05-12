@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import Doctor from '../models/Doctor.js';
 import { generateOTP, getOTPExpiry } from '../utils/otp.js';
-import { sendOTPEmail } from '../utils/email.js';
+import { sendOTPEmail, sendPasswordResetOTPEmail } from '../utils/email.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import Clinic from '../models/Clinic.js';
 
@@ -148,5 +148,123 @@ export const resendDoctorOTP = async (req, res) => {
     } catch (error) {
         console.error('Resend doctor OTP error:', error);
         return sendError(res, 500, 'Failed to resend OTP. Please try again.');
+    }
+};
+
+// ─── Forgot password (doctor) ───────────────────────────────────────────────
+
+export const forgotPasswordDoctor = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const doctor = await Doctor.findOne({ email });
+        if (!doctor) {
+            return sendError(res, 404, 'No account found with this email address.');
+        }
+
+        if (!doctor.isEmailVerified) {
+            return sendError(res, 403, 'Please verify your email before resetting your password.');
+        }
+
+        const otp = generateOTP();
+        const hashedOtp = await bcrypt.hash(otp, 10);
+        const expire = getOTPExpiry();
+
+        await Doctor.findByIdAndUpdate(doctor._id, {
+            resetPasswordOtp: hashedOtp,
+            resetPasswordOtpExpire: expire,
+        });
+
+        await sendPasswordResetOTPEmail(email, otp, doctor.fullName);
+
+        return sendSuccess(res, 200, 'A verification code has been sent to your email.', {
+            email: doctor.email,
+        });
+    } catch (error) {
+        console.error('Doctor forgot password error:', error);
+        return sendError(res, 500, 'Failed to send reset code. Please try again.');
+    }
+};
+
+export const verifyResetOtpDoctor = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        const doctor = await Doctor.findOne({ email }).select(
+            '+resetPasswordOtp +resetPasswordOtpExpire'
+        );
+        if (!doctor) {
+            return sendError(res, 404, 'No account found with this email address.');
+        }
+
+        if (!doctor.resetPasswordOtp || !doctor.resetPasswordOtpExpire) {
+            return sendError(res, 400, 'No reset code found. Please request a new one.');
+        }
+
+        if (new Date() > doctor.resetPasswordOtpExpire) {
+            return sendError(res, 400, 'Code has expired. Please request a new one.');
+        }
+
+        const valid = await bcrypt.compare(otp, doctor.resetPasswordOtp);
+        if (!valid) {
+            return sendError(res, 400, 'Invalid code. Please try again.');
+        }
+
+        const resetToken = jwt.sign(
+            {
+                userId: doctor._id.toString(),
+                email: doctor.email,
+                purpose: 'password_reset_doctor',
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        return sendSuccess(res, 200, 'Code verified. You can set a new password.', {
+            resetToken,
+            email: doctor.email,
+        });
+    } catch (error) {
+        console.error('Doctor verify reset OTP error:', error);
+        return sendError(res, 500, 'Verification failed. Please try again.');
+    }
+};
+
+export const resetPasswordDoctor = async (req, res) => {
+    try {
+        const { email, otp, password } = req.body;
+
+        const doctor = await Doctor.findOne({ email }).select(
+            '+resetPasswordOtp +resetPasswordOtpExpire'
+        );
+        if (!doctor) {
+            return sendError(res, 404, 'No account found with this email address.');
+        }
+
+        if (!doctor.resetPasswordOtp || !doctor.resetPasswordOtpExpire) {
+            return sendError(res, 400, 'No reset code found. Please start again.');
+        }
+
+        if (new Date() > doctor.resetPasswordOtpExpire) {
+            return sendError(res, 400, 'Code has expired. Please request a new one.');
+        }
+
+        const valid = await bcrypt.compare(otp, doctor.resetPasswordOtp);
+        if (!valid) {
+            return sendError(res, 400, 'Invalid code. Please try again.');
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        await Doctor.findByIdAndUpdate(doctor._id, {
+            password: hashedPassword,
+            resetPasswordOtp: null,
+            resetPasswordOtpExpire: null,
+        });
+
+        return sendSuccess(res, 200, 'Password updated successfully. You can log in with your new password.');
+    } catch (error) {
+        console.error('Doctor reset password error:', error);
+        return sendError(res, 500, 'Failed to reset password. Please try again.');
     }
 };

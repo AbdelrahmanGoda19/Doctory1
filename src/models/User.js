@@ -45,6 +45,10 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     otp: { type: String, default: null, select: false },
     otpExpire: { type: Date, default: null, select: false },
+
+    // Password reset (separate from registration OTP)
+    resetPasswordOtp: { type: String, default: null, select: false },
+    resetPasswordOtpExpire: { type: Date, default: null, select: false },
   },
   { timestamps: true }
 );
