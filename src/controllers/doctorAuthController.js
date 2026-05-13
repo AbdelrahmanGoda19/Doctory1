@@ -46,6 +46,7 @@ export const registerDoctor = async (req, res) => {
             reviewCount,
             profileViews,
             bio,
+            image_profile,
             otp: hashedOTP,
             otpExpire: getOTPExpiry(),
             isEmailVerified: false,
