@@ -9,7 +9,7 @@ import Clinic from '../models/Clinic.js';
 // ─── Register Doctor ──────────────────────────────────────────────────────────
 export const registerDoctor = async (req, res) => {
     try {
-        const { fullName, email, password, phone, gender, region, specialty, medical_license, experience, languages, title, rating, reviewCount, profileViews, bio } = req.body;
+        const { fullName, email, password, phone, gender, region, specialty, medical_license, experience, languages, title, rating, reviewCount, profileViews, bio , image_profile } = req.body;
 
         const existingDoctor = await Doctor.findOne({ email });
         if (existingDoctor) {
